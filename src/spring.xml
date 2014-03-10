@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- instead of mentioning all Annotation class, we can use <context:annotation-config/> -->
+	<!-- for this context name space is added -->
+	<context:annotation-config/>	
+	
+	<bean id="triangle" class="com.jrp.core.Triangle">
+		<property name="type" value="Equilateral"></property>
+
+		<constructor-arg value="20" />
+		<constructor-arg value="same" />
+
+		<!-- or -->
+
+		<!-- <constructor-arg value="20" index="0"/> <constructor-arg value="same" 
+			index="1"/> -->
+
+		<!-- or -->
+
+		<!-- <constructor-arg value="20" type="int"/> <constructor-arg value="same" 
+			type="java.lang.String"/> -->
+	</bean>
+
+	<bean id="line" class="com.jrp.core.Line">
+		<!-- inner bean illustration, no "id" in inner bean and "ref" is removed 
+			from property tag -->
+		<property name="pointA">
+			<bean class="com.jrp.core.Point">
+				<property name="x" value="0"></property>
+				<property name="y" value="0"></property>
+			</bean>
+		</property>
+
+		<!-- useage of alias name -->
+		<property name="pointB" ref="pointTwo"></property>
+	</bean>
+
+	<bean id="point1" class="com.jrp.core.Point">
+		<property name="x" value="0"></property>
+		<property name="y" value="0"></property>
+	</bean>
+
+	<bean id="point2" class="com.jrp.core.Point">
+		<property name="x" value="0"></property>
+		<property name="y" value="#{10*1.07}"></property>
+		<!-- Some mathematical calculation inside the value parameter, but what 
+			about Math.pow(3, 5)? -->
+	</bean>
+
+	<!-- illustration of alias instead of "bean2" -->
+	<alias name="point2" alias="pointTwo" />
+
+	<!-- illustration of list -->
+	<bean id="rectangle" class="com.jrp.core.RectangleAsList">
+		<property name="points">
+			<list>
+				<ref bean="pointA" />
+				<ref bean="pointB" />
+				<!-- inner bean -->
+				<bean class="com.jrp.core.Point">
+					<property name="x" value="20"></property>
+					<property name="y" value="0"></property>
+				</bean>
+
+				<!-- for Inetgers, as list contains only objects, not primitive ones -->
+				<!-- <value>89</value> -->
+				<!-- list and set are similar -->
+			</list>
+		</property>
+	</bean>
+
+	<!-- illustration of injecting sub beans into parent bean -->
+
+	<!-- here pointC will be merged to the list of parent bean -->
+	<bean id="rectangleSub" class="com.jrp.core.RectangleAsList">
+		<property name="points">
+			<list merge="true">
+				<!-- by removing the merge attribute, list having pointC will override 
+					the parent list -->
+				<ref bean="pointC" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="pointA" class="com.jrp.core.Point">
+		<property name="x" value="0"></property>
+		<property name="y" value="0"></property>
+	</bean>
+
+	<bean id="pointB" class="com.jrp.core.Point">
+	<!-- illustration for @Qualifier , check LineAutowire -->
+		<qualifier value="ForPointY"/>
+		<property name="x" value="0"></property>
+		<property name="y" value="20"></property>
+	</bean>
+
+	<bean id="pointC" class="com.jrp.core.Point">
+		<property name="x" value="${pointC.x}"></property>
+		<property name="y" value="${pointC.y}"></property>
+	</bean>
+
+	<!-- illustration of injecting Map object -->
+
+	<bean id="rectangleAsMap" class="com.jrp.core.RectangleAsMap">
+		<property name="points">
+			<map>
+				<entry key="pointA" value-ref="pointA"></entry>
+				<entry key="pointB" value-ref="pointB"></entry>
+				<entry key="pointC" value-ref="pointC"></entry>
+				<entry key="pointD" value-ref="pointD"></entry>
+				<!-- for value <entry key="xxx" value="yyy"></entry> -->
+				<!-- inner bean is also allowed -->
+			</map>
+		</property>
+	</bean>
+
+	<bean id="pointD" class="com.jrp.core.Point">
+		<property name="x" value="20"></property>
+		<property name="y" value="0"></property>
+	</bean>
+
+
+	<!-- illustration of autowiring -->
+	
+	<!-- we can comment below bean declaration , instead we can use @Component in LineAutoWire class.
+	@Component is called Stereotype annotation, the generic one , other such Annotation are , @Service, @Repository, @Controller which says the kind of bean -->
+	<!-- Moreover, if we comment below bean declaration, we have to tell Spring to scan the beans in a particular package, so here it is how -->
+	
+	<context:component-scan base-package="com.jrp.core"/>
+	
+	<!-- <bean id="lineAutowire" class="com.jrp.core.LineAutowire"> -->
+		<!-- Spring will search for the beans in the following order
+		1. byType i.e class Name (default)
+		2. byName i.e member name-->
+		
+		<!-- Here byType, Spring got many beans, then it checked byName and got two beans. Hence injected those two beans -->
+		<!-- Now, lets change one member name i.e pointB to pointY -->
+		<!-- So, now there is no bean called pointY, so byType Spring gets many beans, but then byName , it can't choose the suitable bean for pointY hence is the error -->
+		<!-- To solve this, we will use @Qualifier, to help Spring to choose suitable bean -->
+	<!-- </bean> -->
+	<!-- autowrire="byType" and autowire="constructor" work in similar way, 
+		good for single member or members of different class (type), not for above 
+		case -->
+	
+	<!-- The below class has to be added for Autowiring Purpose -->
+	<!-- <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor"/> -->
+	<!-- instead of mentioning all Annotation class, we can use <context:annotation-config/> -->	
+		
+		
+
+	<!-- illustration of bean definition inheritance -->
+
+	<!-- abstract property is optional, by setting it true, Spring will inititalize 
+		the bean, but will not instantiate it -->
+	<bean id="parentCircle" class="com.jrp.core.Circle" abstract="true">
+		<property name="pointA" ref="pointA"></property>
+	</bean>
+
+	<bean id="circle" class="com.jrp.core.Circle" parent="parentCircle"
+		init-method="myInit" destroy-method="myCleanUp">
+		<!-- if we comment below line , there will be a NPE thrown at run time 
+			as there is no Point object to be set. To check this , we added @Required 
+			attribute in Circle class and have used RequiredAnnotationBeanPostProcessor, 
+			check next bean -->
+		<property name="pointB" ref="pointB"></property>
+	</bean>
+
+	<!-- illustration of RequiredAnnotationBeanPostProcessor -->
+	<!-- This class will check for all @Required attributes are injected properly 
+		or not, if not, it will throw exception after initialization of beans. In 
+		this way NPE is avoided at run time. -->
+		
+	<!-- <bean
+		class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" /> -->
+	<!-- instead of mentioning all Annotation class, we can use <context:annotation-config/> -->	
+
+
+	<!-- illustration of BeanPostProcessor -->
+	<bean class="com.jrp.core.DisplayNameBeanPostProcessor" />
+
+	<!-- property placeholder configurer , check pointC's x and y value -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="spring.properties"></property>
+	</bean>
+	
+	<!-- usage of MessageSource Interface to retrieve messages out of property file -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>myMessage</value>
+			</list>
+		</property>
+	</bean>
+</beans>
